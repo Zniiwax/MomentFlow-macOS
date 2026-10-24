@@ -65,6 +65,13 @@ git clone --depth 1 https://github.com/Zniiwax/MomentFlow-macOS.git /tmp/mf-inst
 
 如果系统提示需要安装命令行开发工具，点「安装」，完成后重新执行一次即可。
 
+> 如果你的网络访问 GitHub 需要代理：终端里的 `curl` / `git` **不会自动读取系统代理设置**。
+> 先在同一个终端窗口里执行一次下面这行（端口按你代理软件的实际端口改），再运行安装命令：
+>
+> ```bash
+> export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890
+> ```
+
 ### 方式二：手动构建（适合开发者）
 
 ```bash
