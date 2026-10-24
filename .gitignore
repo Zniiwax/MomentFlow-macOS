@@ -1,0 +1,7 @@
+.build/
+Dist/
+.DS_Store
+*.xcuserstate
+
+# 图标可以从脚本重新生成，没必要进版本库
+Resources/AppIcon.iconset/
