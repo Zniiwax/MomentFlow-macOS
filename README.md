@@ -6,6 +6,10 @@
 
 <p align="center">macOS 菜单栏录屏小工具：一个按键，把正在看的东西录下来。</p>
 
+<p align="center">
+  <a href="README.md">中文</a> ｜ <a href="README.en.md">English</a>
+</p>
+
 ---
 
 ## 这是什么
@@ -33,6 +37,46 @@
 - **无第三方依赖**：只用系统框架（ScreenCaptureKit、AVFoundation、AppKit、SwiftUI）。
 - **录完有提示**：右下角弹出小卡片显示路径，点一下在访达中定位。
 
+## 隐私与安全
+
+**运行时不联网。**
+
+应用本身不发起任何网络请求：没有账号体系，没有遥测，没有崩溃上报，
+没有云同步。源码里没有任何 `URLSession` / `Network` 之类的网络调用。
+
+**录制内容只保存在你的电脑上。**
+
+默认位置是 `~/Desktop/MomentFlow/`，可以在设置里改成任意本地文件夹。
+录制、截图、笔记都不会上传到任何地方。
+
+**唯一的联网发生在安装阶段**：从 GitHub 下载源码并编译。装好之后，
+断网也能正常使用。
+
+需要说明的是：录屏是一项高权限操作，录到什么就会在本地留下什么。
+请自行判断你录制和分享的内容是否合适。
+
+### 关于「一行命令安装」的安全性
+
+`curl ... | bash` 这种写法有一个固有风险：**如果仓库被篡改，或者下载过程被劫持，
+你会直接执行到恶意代码。** 这个风险所有项目都一样，本项目也不例外。
+
+能做的降低风险的方式有三种：
+
+1. **先下载脚本，看一眼再执行**（推荐）
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/Zniiwax/MomentFlow-macOS/main/Scripts/install.sh -o install.sh
+   less install.sh      # 看完按 q 退出
+   bash install.sh
+   ```
+
+   脚本只有 70 行左右，只做四件事：检查环境、下载源码、编译、
+   复制到 `~/Applications`。不会修改系统目录，不需要管理员密码。
+
+2. **从 GitHub 页面手动下载源码**，全程可见（见下方「方式二」）。
+
+3. **克隆仓库后用 Git 核对提交**，适合在意来源的人。
+
 ## 系统要求
 
 - macOS 14 或更高
@@ -40,10 +84,9 @@
 
 ## 安装
 
-### 方式一：一行命令（推荐，不需要懂编程）
+### 方式一：一行命令
 
-先在「启动台」里搜 **终端**（英文系统叫 Terminal）并打开，
-然后把这**一整行**复制进去，按回车：
+打开「终端」（在启动台里搜 Terminal），复制下面这一整行执行：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Zniiwax/MomentFlow-macOS/main/Scripts/install.sh | bash
@@ -51,38 +94,42 @@ curl -fsSL https://raw.githubusercontent.com/Zniiwax/MomentFlow-macOS/main/Scrip
 
 它会自动完成：检查系统 → 下载源码 → 编译 → 安装到 `~/Applications` → 打开应用。
 
-整个过程中**不需要管理员密码**，也不会改动系统目录。
+第一次运行可能需要先安装 Apple 的命令行开发工具（约 1～2 GB）。
+脚本会检测到并弹出安装窗口，点「安装」，等它跑完，再重新执行一次这条命令。
 
-> 第一次运行可能需要先安装 Apple 的命令行开发工具（约 1～2 GB）。
-> 脚本检测到缺失时会自动弹出安装窗口，点「安装」，等它跑完，
-> 再把这行命令重新执行一次即可。
+> **国内网络提示**：访问 GitHub 可能需要代理。终端里的 `curl` / `git`
+> 不会自动读取系统代理设置，需要按你所用代理软件的方式让终端也走代理。
 
-如果上面那条命令提示连接失败（国内网络访问 GitHub 偶尔不稳定），改用这条：
+### 方式二：从 GitHub 页面手动安装（更稳妥）
 
-```bash
-git clone --depth 1 https://github.com/Zniiwax/MomentFlow-macOS.git /tmp/mf-install && bash /tmp/mf-install/Scripts/install.sh
-```
+适合想看清每一步、或者一键命令跑不通的情况。
 
-如果系统提示需要安装命令行开发工具，点「安装」，完成后重新执行一次即可。
+1. 打开项目主页：<https://github.com/Zniiwax/MomentFlow-macOS>
+2. 点右上角绿色的 **Code** 按钮 → **Download ZIP**
+3. 双击下载好的 zip 解压（一般会落在「下载」文件夹）
+4. 打开「终端」
+5. 执行下面这一行：
 
-> 如果你的网络访问 GitHub 需要代理：终端里的 `curl` / `git` **不会自动读取系统代理设置**。
-> 先在同一个终端窗口里执行一次下面这行（端口按你代理软件的实际端口改），再运行安装命令：
->
-> ```bash
-> export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890
-> ```
+   ```bash
+   cd ~/Downloads/MomentFlow-macOS-main && ./Scripts/build_app.sh && open Dist/MomentFlow.app
+   ```
 
-### 方式二：手动构建（适合开发者）
+   如果解压后的文件夹不叫 `MomentFlow-macOS-main`，把路径换成实际的名字即可。
+
+6. 如果提示需要安装命令行开发工具，点「安装」，完成后重新执行第 5 步。
+
+整个过程不需要管理员密码。编译产物在 `Dist/MomentFlow.app`。
+
+### 方式三：开发者构建
 
 ```bash
 git clone https://github.com/Zniiwax/MomentFlow-macOS.git
 cd MomentFlow-macOS
+swift build
+swift test
 ./Scripts/build_app.sh
 open Dist/MomentFlow.app
 ```
-
-`build_app.sh` 会把可执行文件、`Info.plist` 和图标组装成
-`Dist/MomentFlow.app`，并做本地签名。
 
 ### 可选：让权限在重新编译后仍然有效
 
@@ -103,8 +150,6 @@ security delete-identity -c "MomentFlow Local Signing"
 ```
 
 ## 首次运行
-
-按顺序做这几步：
 
 **第 1 步：打开应用**
 
@@ -144,7 +189,7 @@ security delete-identity -c "MomentFlow Local Signing"
 
 按 `⌘⇧R`，录制当前活动应用里面积最大的窗口；再按一次停止。
 
-「当前活动」指你最后点击的那个应用。所以按之前先点一下要录的窗口。
+「当前活动」指你最后点击的那个应用，所以按之前先点一下要录的窗口。
 
 ### 采集片段
 
@@ -212,8 +257,8 @@ security delete-identity -c "MomentFlow Local Signing"
 
 **提示「无法打开，因为无法验证开发者」？**
 
-用上面的安装脚本在本机编译的版本不会出现这个提示。
-如果出现了，右键点应用 →「打开」，或在「系统设置 → 隐私与安全性」里点「仍要打开」。
+本机编译的版本不会出现这个提示。如果出现了，右键点应用 →「打开」，
+或在「系统设置 → 隐私与安全性」里点「仍要打开」。
 
 **系统设置里找不到 MomentFlow？**
 
@@ -222,12 +267,11 @@ security delete-identity -c "MomentFlow Local Signing"
 
 **授权了，但应用还是说没权限？**
 
-退出应用，再重新打开。权限只在启动时读取，运行中的进程不会更新。
+退出应用，再重新打开。权限只在启动时读取。
 
 **录出来是黑屏？**
 
-内容受 DRM 保护（Netflix、Apple TV+ 等），系统不允许录制，
-这不是应用能绕过的限制。
+内容受 DRM 保护（Netflix、Apple TV+ 等），系统不允许录制。
 
 **录出来的画面和屏幕上看到的不一样？**
 
@@ -243,6 +287,7 @@ Sources/
 Tests/
   MomentFlowCoreTests/
 Scripts/
+  install.sh          一键安装
   build_app.sh        构建 .app
   setup_signing.sh    创建本地代码签名证书
   GenerateIcon.swift  生成应用图标和菜单栏图标
