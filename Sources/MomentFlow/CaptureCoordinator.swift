@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import MomentFlowCore
 import ScreenCaptureKit
 
@@ -95,12 +96,26 @@ final class CaptureCoordinator: ObservableObject {
     /// 录制成功但落盘失败时，把临时文件留下，别把用户刚录的东西删了。
     private var keepStagingOnFinish = false
     private var activeMedia = MediaSelection.videoWithAudio
+    /// 订阅设置里的录制默认项。
+    private var settingsObservation: AnyCancellable?
 
     init() {
         let saved = defaults.string(forKey: Self.modeKey).flatMap(Mode.init(rawValue:))
         mode = saved ?? .region
         media = settings.defaultMedia
         wireSelection()
+
+        // 设置里改了「画面 / 系统声音」的默认勾选，录制这边必须跟着变。
+        // 之前只在 init 时读一次，结果在设置里关掉画面之后，
+        // 录制仍然按「画面 + 系统声音」走，存出来的还是 mp4。
+        settingsObservation = settings.$defaultMedia
+            .dropFirst()
+            .sink { [weak self] value in
+                guard let self else { return }
+                guard self.stage != .recording, self.stage != .starting else { return }
+                guard self.media != value else { return }
+                self.media = value
+            }
     }
 
     var isRecording: Bool {

@@ -138,8 +138,11 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
             config.sourceRect = sourceRect
         }
         config.capturesAudio = media.systemAudio
-        config.sampleRate = 48_000
-        config.channelCount = 2
+        // 不强制 48 kHz / 立体声。
+        //
+        // 如果音频设备的原生格式是 44.1 kHz，强制指定会让系统在开始采集的瞬间
+        // 重新协商音频格式，正在播放的音乐会明显卡一下。
+        // 交给系统用设备原生格式，采样率转换交给 AVAssetWriter 的编码器。
         // 别把本工具自己的提示音录进去。
         config.excludesCurrentProcessAudio = true
 
