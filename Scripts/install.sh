@@ -42,7 +42,9 @@ echo "    Swift $(swift --version 2>/dev/null | head -1 | sed 's/.*Swift version
 bold "==> 2/5 下载源码"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-curl -fsSL "$ARCHIVE" -o "$WORK/src.tar.gz" || die "下载失败，请检查网络后重试。"
+curl -fsSL --retry 3 --retry-delay 2 --connect-timeout 20 \
+    "$ARCHIVE" -o "$WORK/src.tar.gz" \
+    || die "下载失败。请检查网络，或改用 README 里的备用安装命令。"
 tar -xzf "$WORK/src.tar.gz" -C "$WORK"
 SRC="$(find "$WORK" -maxdepth 1 -type d -name "${REPO}-*" | head -1)"
 [ -d "$SRC" ] || die "解压失败。"

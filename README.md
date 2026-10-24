@@ -57,6 +57,14 @@ curl -fsSL https://raw.githubusercontent.com/Zniiwax/MomentFlow-macOS/main/Scrip
 > 脚本检测到缺失时会自动弹出安装窗口，点「安装」，等它跑完，
 > 再把这行命令重新执行一次即可。
 
+如果上面那条命令提示连接失败（国内网络访问 GitHub 偶尔不稳定），改用这条：
+
+```bash
+git clone --depth 1 https://github.com/Zniiwax/MomentFlow-macOS.git /tmp/mf-install && bash /tmp/mf-install/Scripts/install.sh
+```
+
+如果系统提示需要安装命令行开发工具，点「安装」，完成后重新执行一次即可。
+
 ### 方式二：手动构建（适合开发者）
 
 ```bash
