@@ -329,4 +329,4 @@ and window selection.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). You are free to use, modify, and redistribute it.
+MIT — see [LICENSE](LICENSE).
