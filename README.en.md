@@ -67,6 +67,11 @@ is appropriate.
 - macOS 14 or later
 - Xcode or Xcode Command Line Tools (for building)
 
+**Size**
+
+- Installed app: about **2 MB**
+- Source archive on GitHub: about **1 MB**
+
 ## Installation
 
 ### Option 1: One-line installer

@@ -60,6 +60,11 @@
 - macOS 14 或更高
 - Xcode 或 Xcode Command Line Tools（编译用）
 
+**体积**
+
+- 安装后的 App 约 **2 MB**
+- GitHub 源码压缩包约 **1 MB**
+
 ## 安装
 
 ### 方式一：一行命令
