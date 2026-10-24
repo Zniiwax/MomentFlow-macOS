@@ -176,6 +176,27 @@ The menu bar icon turns into a red dot with a timer. Press again to stop.
 The first save triggers a "wants to access your Desktop folder" prompt. Allow it.
 Recordings are saved to `~/Desktop/MomentFlow/` by default.
 
+## Updating
+
+Run the installer again; it downloads the latest source, rebuilds, and replaces
+the installed copy:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Zniiwax/MomentFlow-macOS/main/Scripts/install.sh | bash
+```
+
+If you cloned the repository locally, use:
+
+```bash
+./Scripts/update.sh
+```
+
+It pulls the latest code, builds, replaces the app in `~/Applications`, and
+relaunches it.
+
+> If you have run `./Scripts/setup_signing.sh`, the Screen Recording permission
+> survives updates. With ad-hoc signing you will need to grant it again.
+
 ## Usage
 
 ### Quick record

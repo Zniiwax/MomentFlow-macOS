@@ -166,6 +166,25 @@ security delete-identity -c "MomentFlow Local Signing"
 第一次保存时会弹出「想访问你的桌面文件夹」，点允许。
 素材默认保存在 `~/Desktop/MomentFlow/`。
 
+## 更新
+
+重新运行一次安装命令即可，它会下载最新源码、重新编译并替换旧版：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Zniiwax/MomentFlow-macOS/main/Scripts/install.sh | bash
+```
+
+如果是在本地克隆的仓库，用：
+
+```bash
+./Scripts/update.sh
+```
+
+它会拉取最新代码、编译，替换 `~/Applications` 里的那份并重启。
+
+> 如果之前跑过 `./Scripts/setup_signing.sh`，更新后屏幕录制权限会保留；
+> 只用 ad-hoc 签名的话，需要重新授权一次。
+
 ## 使用
 
 ### 快速录制
