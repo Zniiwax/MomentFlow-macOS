@@ -59,33 +59,8 @@ Recordings, screenshots, and notes are never uploaded anywhere.
 downloaded from GitHub and compiled. Once installed, the app works offline.
 
 One caveat worth stating plainly: screen recording is a high-privilege
-operation. Whatever is on screen gets written to your disk. Please judge for
-yourself whether the content you record — and share — is appropriate.
-
-### A note on the one-line installer
-
-`curl ... | bash` carries an inherent risk: **if the repository is compromised,
-or the download is intercepted, you execute whatever code is there.** This is
-true of every project that offers such an installer, including this one.
-
-Three ways to reduce that risk:
-
-1. **Download the script, read it, then run it** (recommended)
-
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/Zniiwax/MomentFlow-macOS/main/Scripts/install.sh -o install.sh
-   less install.sh      # press q to exit
-   bash install.sh
-   ```
-
-   The script is about 70 lines. It only checks the environment, downloads the
-   source, builds it, and copies the app to `~/Applications`. It does not touch
-   system directories and does not ask for an administrator password.
-
-2. **Download the source from the GitHub page** (see "Option 2" below), so every
-   step is visible.
-
-3. **Clone the repository and inspect the commits** if provenance matters to you.
+operation. Please judge for yourself whether the content you record and share
+is appropriate.
 
 ## Requirements
 
@@ -231,6 +206,24 @@ The menu bar icon shows a red dot and the elapsed time. The toolbar becomes a
 control bar with stop and discard. Quitting during a recording waits for the
 file to finish writing before exiting.
 
+### Using the menu bar
+
+You don't have to memorize shortcuts. Click the round icon at the top right of
+the screen:
+
+- **Capture…** — opens the toolbar
+- **Quick Record / Stop Recording**
+- **Mark a Moment**
+- **Open Library** — opens the recordings folder in Finder
+- **Open Latest Recording** — reveals the most recent file in Finder
+- **Settings…** — shortcuts, library location, default capture options
+- **Shortcuts…** — the welcome/help window
+- **Screen Recording permission status**
+- **Quit**
+
+While recording, the icon turns into a red dot with a timer, and the first
+menu item shows the elapsed time.
+
 ## Output
 
 Default location: `~/Desktop/MomentFlow/`
@@ -331,5 +324,4 @@ and window selection.
 
 ## License
 
-No open-source license is included. Please contact the author before using,
-modifying, or redistributing this project.
+MIT — see [LICENSE](LICENSE). You are free to use, modify, and redistribute it.
