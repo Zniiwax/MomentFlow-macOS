@@ -185,6 +185,34 @@ curl -fsSL https://raw.githubusercontent.com/Zniiwax/MomentFlow-macOS/main/Scrip
 > 如果之前跑过 `./Scripts/setup_signing.sh`，更新后屏幕录制权限会保留；
 > 只用 ad-hoc 签名的话，需要重新授权一次。
 
+## 卸载
+
+用脚本卸载：
+
+```bash
+./Scripts/uninstall.sh
+```
+
+它会删除 App 和偏好设置，**不会删除任何录制文件**。
+
+连同本地签名证书一起删：
+
+```bash
+./Scripts/uninstall.sh --purge
+```
+
+先看看会删什么（不动手）：
+
+```bash
+./Scripts/uninstall.sh --dry-run
+```
+
+最后还有一步需要手动完成：**系统设置 → 隐私与安全性 → 录屏与系统录音**，
+选中 MomentFlow，点列表下方的「−」。
+
+不想用脚本也可以：把 `~/Applications/MomentFlow.app` 拖进废纸篓即可停用，
+偏好设置在 `~/Library/Preferences/local.momentflow.app.plist`。
+
 ## 使用
 
 ### 快速录制

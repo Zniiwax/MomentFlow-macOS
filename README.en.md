@@ -197,6 +197,35 @@ relaunches it.
 > If you have run `./Scripts/setup_signing.sh`, the Screen Recording permission
 > survives updates. With ad-hoc signing you will need to grant it again.
 
+## Uninstalling
+
+Use the script:
+
+```bash
+./Scripts/uninstall.sh
+```
+
+It removes the app and its preferences. **It never deletes your recordings.**
+
+To also remove the local signing certificate:
+
+```bash
+./Scripts/uninstall.sh --purge
+```
+
+To see what would be removed without doing it:
+
+```bash
+./Scripts/uninstall.sh --dry-run
+```
+
+One step has to be done by hand: open **System Settings → Privacy & Security →
+Screen & System Audio Recording**, select MomentFlow and click the **−** button.
+
+You can also uninstall manually: move `~/Applications/MomentFlow.app` to the
+Trash to disable it. Preferences live at
+`~/Library/Preferences/local.momentflow.app.plist`.
+
 ## Usage
 
 ### Quick record
