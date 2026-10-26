@@ -213,6 +213,18 @@ private struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 
+            Picker("麦克风输入", selection: microphoneDeviceBinding) {
+                Text("跟随系统（\(AudioInputDevices.systemDefaultName ?? "默认设备")）")
+                    .tag(String?.none)
+                ForEach(AudioInputDevices.all()) { device in
+                    Text(device.name).tag(Optional(device.id))
+                }
+            }
+
+            if let selected = selectedMicrophoneDevice, AudioInputDevices.isBluetooth(selected) {
+                warning("\(selected.name) 是蓝牙设备：录它的时候，系统声音会变成通话音质。")
+            }
+
             if !settings.defaultMedia.isValid {
                 warning("两个都不选就没东西可录了。")
             }
@@ -256,6 +268,18 @@ private struct SettingsView: View {
                 )
             ) }
         )
+    }
+
+    private var microphoneDeviceBinding: Binding<String?> {
+        Binding(
+            get: { settings.microphoneDeviceID },
+            set: { settings.setMicrophoneDevice($0) }
+        )
+    }
+
+    private var selectedMicrophoneDevice: AudioInputDevices.Device? {
+        guard let id = settings.microphoneDeviceID else { return nil }
+        return AudioInputDevices.all().first { $0.id == id }
     }
 
     // MARK: - 权限

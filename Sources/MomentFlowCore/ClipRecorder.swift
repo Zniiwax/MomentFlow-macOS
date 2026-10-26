@@ -124,6 +124,7 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         media: MediaSelection,
         outputURL: URL,
         microphoneOutputURL: URL? = nil,
+        microphoneDeviceID: String? = nil,
         frameRate: Int = 30
     ) async throws {
         guard media.isValid else { throw Failure.nothingSelected }
@@ -157,6 +158,9 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         config.excludesCurrentProcessAudio = true
         if #available(macOS 15.0, *) {
             config.captureMicrophone = media.microphone
+            if media.microphone, let microphoneDeviceID {
+                config.microphoneCaptureDeviceID = microphoneDeviceID
+            }
         }
 
         let stream = SCStream(filter: setup.filter, configuration: config, delegate: self)

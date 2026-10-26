@@ -45,6 +45,8 @@ final class AppSettings: ObservableObject {
     @Published private(set) var combos: [HotkeySlot: HotkeyCombo]
     @Published private(set) var libraryRoot: URL
     @Published private(set) var defaultMedia: MediaSelection
+    /// nil 表示跟随系统默认输入设备。
+    @Published private(set) var microphoneDeviceID: String?
     /// 注册失败的组合，界面上直接标出来。
     @Published var hotkeyIssues: [HotkeySlot: String] = [:]
 
@@ -75,6 +77,7 @@ final class AppSettings: ObservableObject {
             systemAudio: hasAudio,
             microphone: hasMicrophone
         )
+        self.microphoneDeviceID = defaults.string(forKey: Self.microphoneDeviceKey)
     }
 
     // MARK: - 快捷键
@@ -134,11 +137,24 @@ final class AppSettings: ObservableObject {
         defaults.set(media.microphone, forKey: Self.microphoneKey)
     }
 
+    // MARK: - 麦克风设备
+
+    func setMicrophoneDevice(_ id: String?) {
+        guard id != microphoneDeviceID else { return }
+        microphoneDeviceID = id
+        if let id {
+            defaults.set(id, forKey: Self.microphoneDeviceKey)
+        } else {
+            defaults.removeObject(forKey: Self.microphoneDeviceKey)
+        }
+    }
+
     // MARK: - 键名
 
     private static let videoKey = "capture.media.video"
     private static let audioKey = "capture.media.audio"
     private static let microphoneKey = "capture.media.microphone"
+    private static let microphoneDeviceKey = "capture.microphone.device"
 
     private static func hotkeyKey(_ slot: HotkeySlot) -> String {
         "hotkey.\(slot.rawValue)"

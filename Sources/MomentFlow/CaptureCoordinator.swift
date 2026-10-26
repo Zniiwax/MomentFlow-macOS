@@ -256,7 +256,8 @@ final class CaptureCoordinator: ObservableObject {
                     source: source,
                     media: selected,
                     outputURL: url,
-                    microphoneOutputURL: staging.appendingPathComponent("microphone.m4a")
+                    microphoneOutputURL: staging.appendingPathComponent("microphone.m4a"),
+                    microphoneDeviceID: settings.microphoneDeviceID
                 )
 
                 self.staging = staging
@@ -316,7 +317,8 @@ final class CaptureCoordinator: ObservableObject {
                     source: .window(window),
                     media: selected,
                     outputURL: url,
-                    microphoneOutputURL: staging.appendingPathComponent("microphone.m4a")
+                    microphoneOutputURL: staging.appendingPathComponent("microphone.m4a"),
+                    microphoneDeviceID: settings.microphoneDeviceID
                 )
 
                 self.staging = staging
