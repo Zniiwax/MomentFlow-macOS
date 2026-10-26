@@ -115,6 +115,8 @@ private struct CaptureToolbarView: View {
                 .toggleStyle(.checkbox)
             Toggle("系统声音", isOn: $coordinator.media.systemAudio)
                 .toggleStyle(.checkbox)
+            Toggle("麦克风", isOn: $coordinator.media.microphone)
+                .toggleStyle(.checkbox)
 
             Divider().frame(height: 18)
 

@@ -1,3 +1,4 @@
+import AVFoundation
 import AppKit
 import CoreGraphics
 import Foundation
@@ -14,6 +15,21 @@ public enum CapturePermission {
     @discardableResult
     public static func requestScreenRecording() -> Bool {
         CGRequestScreenCaptureAccess()
+    }
+
+    // MARK: - 麦克风
+
+    public static var microphone: AVAuthorizationStatus {
+        AVCaptureDevice.authorizationStatus(for: .audio)
+    }
+
+    public static var hasMicrophone: Bool {
+        microphone == .authorized
+    }
+
+    /// 第一次用麦克风时申请权限。
+    public static func requestMicrophone() async -> Bool {
+        await AVCaptureDevice.requestAccess(for: .audio)
     }
 
     /// 直接跳到系统设置里的屏幕录制面板。

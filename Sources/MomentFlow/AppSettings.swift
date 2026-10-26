@@ -69,7 +69,12 @@ final class AppSettings: ObservableObject {
 
         let hasVideo = defaults.object(forKey: Self.videoKey) as? Bool ?? true
         let hasAudio = defaults.object(forKey: Self.audioKey) as? Bool ?? true
-        self.defaultMedia = MediaSelection(video: hasVideo, systemAudio: hasAudio)
+        let hasMicrophone = defaults.object(forKey: Self.microphoneKey) as? Bool ?? false
+        self.defaultMedia = MediaSelection(
+            video: hasVideo,
+            systemAudio: hasAudio,
+            microphone: hasMicrophone
+        )
     }
 
     // MARK: - 快捷键
@@ -126,12 +131,14 @@ final class AppSettings: ObservableObject {
         defaultMedia = media
         defaults.set(media.video, forKey: Self.videoKey)
         defaults.set(media.systemAudio, forKey: Self.audioKey)
+        defaults.set(media.microphone, forKey: Self.microphoneKey)
     }
 
     // MARK: - 键名
 
     private static let videoKey = "capture.media.video"
     private static let audioKey = "capture.media.audio"
+    private static let microphoneKey = "capture.media.microphone"
 
     private static func hotkeyKey(_ slot: HotkeySlot) -> String {
         "hotkey.\(slot.rawValue)"

@@ -207,6 +207,11 @@ private struct SettingsView: View {
 
             Toggle("画面", isOn: videoBinding)
             Toggle("系统声音", isOn: audioBinding)
+            Toggle("麦克风", isOn: microphoneBinding)
+
+            Text("麦克风会单独存成一轨。用蓝牙耳机当麦克风时，系统会把蓝牙切到通话模式，系统声音的音质会一起下降。")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
 
             if !settings.defaultMedia.isValid {
                 warning("两个都不选就没东西可录了。")
@@ -218,7 +223,11 @@ private struct SettingsView: View {
         Binding(
             get: { settings.defaultMedia.video },
             set: { settings.setDefaultMedia(
-                MediaSelection(video: $0, systemAudio: settings.defaultMedia.systemAudio)
+                MediaSelection(
+                    video: $0,
+                    systemAudio: settings.defaultMedia.systemAudio,
+                    microphone: settings.defaultMedia.microphone
+                )
             ) }
         )
     }
@@ -227,7 +236,24 @@ private struct SettingsView: View {
         Binding(
             get: { settings.defaultMedia.systemAudio },
             set: { settings.setDefaultMedia(
-                MediaSelection(video: settings.defaultMedia.video, systemAudio: $0)
+                MediaSelection(
+                    video: settings.defaultMedia.video,
+                    systemAudio: $0,
+                    microphone: settings.defaultMedia.microphone
+                )
+            ) }
+        )
+    }
+
+    private var microphoneBinding: Binding<Bool> {
+        Binding(
+            get: { settings.defaultMedia.microphone },
+            set: { settings.setDefaultMedia(
+                MediaSelection(
+                    video: settings.defaultMedia.video,
+                    systemAudio: settings.defaultMedia.systemAudio,
+                    microphone: $0
+                )
             ) }
         )
     }

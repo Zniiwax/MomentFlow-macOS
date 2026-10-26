@@ -235,10 +235,29 @@ final class CaptureCoordinator: ObservableObject {
             do {
                 let source = try Self.source(for: target)
                 let staging = try Self.makeStagingDirectory()
-                let selected = media
+                var selected = media
+
+                // 麦克风没授权时不能让整段录制失败：这次先不录麦克风，
+                // 画面和系统声音照常走。
+                if selected.microphone, !CapturePermission.hasMicrophone {
+                    let granted = await CapturePermission.requestMicrophone()
+                    if !granted {
+                        selected.microphone = false
+                        report(
+                            "麦克风没有权限",
+                            "这次先不录麦克风，画面和系统声音照常保存。需要的话去「系统设置 → 隐私与安全性 → 麦克风」里打开。"
+                        )
+                    }
+                }
+
                 let url = staging.appendingPathComponent("clip.\(selected.fileExtension)")
 
-                try await recorder.start(source: source, media: selected, outputURL: url)
+                try await recorder.start(
+                    source: source,
+                    media: selected,
+                    outputURL: url,
+                    microphoneOutputURL: staging.appendingPathComponent("microphone.m4a")
+                )
 
                 self.staging = staging
                 activeMedia = selected
@@ -279,9 +298,26 @@ final class CaptureCoordinator: ObservableObject {
                 }
 
                 let staging = try Self.makeStagingDirectory()
-                let selected = media
+                var selected = media
+
+                if selected.microphone, !CapturePermission.hasMicrophone {
+                    let granted = await CapturePermission.requestMicrophone()
+                    if !granted {
+                        selected.microphone = false
+                        report(
+                            "麦克风没有权限",
+                            "这次先不录麦克风，画面和系统声音照常保存。"
+                        )
+                    }
+                }
+
                 let url = staging.appendingPathComponent("clip.\(selected.fileExtension)")
-                try await recorder.start(source: .window(window), media: selected, outputURL: url)
+                try await recorder.start(
+                    source: .window(window),
+                    media: selected,
+                    outputURL: url,
+                    microphoneOutputURL: staging.appendingPathComponent("microphone.m4a")
+                )
 
                 self.staging = staging
                 activeMedia = selected
@@ -395,6 +431,16 @@ final class CaptureCoordinator: ObservableObject {
 
         try store.place(result.url, as: fileName)
         moment.files.clip = fileName
+
+        // 麦克风单独一轨：方便之后单独静音、单独转写，不和系统声音混死。
+        if let microphoneURL = result.microphoneURL {
+            let microphoneName = store.uniqueFileName(
+                base: "\(moment.id)_mic",
+                extension: "m4a"
+            )
+            try store.place(microphoneURL, as: microphoneName)
+            moment.files.microphone = microphoneName
+        }
 
         try store.save(moment)
         let fileURL = store.fileURL(fileName)

@@ -28,6 +28,8 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
     public struct Result: Sendable {
         public var url: URL
         public var duration: TimeInterval
+        /// 麦克风单独一轨，没有开麦克风时为 nil。
+        public var microphoneURL: URL?
     }
 
     public enum Failure: LocalizedError {
@@ -85,6 +87,11 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
     private var writer: AVAssetWriter?
     private var videoInput: AVAssetWriterInput?
     private var audioInput: AVAssetWriterInput?
+    private var microphoneWriter: AVAssetWriter?
+    private var microphoneInput: AVAssetWriterInput?
+    private var microphoneSessionStart: CMTime?
+    private var wantsMicrophone = false
+    private var microphoneURL: URL?
     private var outputURL: URL?
     private var wantsVideo = true
     private var sessionStart: CMTime?
@@ -114,6 +121,7 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         source: Source,
         media: MediaSelection,
         outputURL: URL,
+        microphoneOutputURL: URL? = nil,
         frameRate: Int = 30
     ) async throws {
         guard media.isValid else { throw Failure.nothingSelected }
@@ -145,12 +153,16 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         // 交给系统用设备原生格式，采样率转换交给 AVAssetWriter 的编码器。
         // 别把本工具自己的提示音录进去。
         config.excludesCurrentProcessAudio = true
+        if #available(macOS 15.0, *) {
+            config.captureMicrophone = media.microphone
+        }
 
         let stream = SCStream(filter: setup.filter, configuration: config, delegate: self)
 
         try withSampleQueue {
             try self.prepareWriterLocked(
                 outputURL: outputURL,
+                microphoneURL: media.microphone ? microphoneOutputURL : nil,
                 media: media,
                 pixelSize: setup.pixelSize,
                 bitrate: setup.bitrate,
@@ -165,6 +177,9 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
             if media.systemAudio {
                 try stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: sampleQueue)
             }
+            if #available(macOS 15.0, *), media.microphone {
+                try stream.addStreamOutput(self, type: .microphone, sampleHandlerQueue: sampleQueue)
+            }
             try await stream.startCapture()
         } catch {
             withSampleQueue { self.resetLocked() }
@@ -176,6 +191,7 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
 
     private func prepareWriterLocked(
         outputURL: URL,
+        microphoneURL: URL?,
         media: MediaSelection,
         pixelSize: PixelSize,
         bitrate: Int,
@@ -222,6 +238,8 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
 
         self.writer = writer
         self.outputURL = outputURL
+        self.microphoneURL = microphoneURL
+        self.wantsMicrophone = media.microphone
         wantsVideo = media.video
         sessionStart = nil
         lastSampleTime = nil
@@ -245,6 +263,9 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         try? await stream.stopCapture()
         try? stream.removeStreamOutput(self, type: .screen)
         try? stream.removeStreamOutput(self, type: .audio)
+        if #available(macOS 15.0, *) {
+            try? stream.removeStreamOutput(self, type: .microphone)
+        }
 
         return try await withCheckedThrowingContinuation { continuation in
             sampleQueue.async {
@@ -265,9 +286,12 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         }
 
         let duration = durationLocked()
+        let microphoneWriter = self.microphoneWriter
+        let microphoneURL = self.microphoneURL
 
         videoInput?.markAsFinished()
         audioInput?.markAsFinished()
+        microphoneInput?.markAsFinished()
         resetLocked()
 
         writer.finishWriting {
@@ -277,7 +301,14 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
                 )
                 return
             }
-            continuation.resume(returning: Result(url: outputURL, duration: duration))
+            guard let microphoneWriter, let microphoneURL else {
+                continuation.resume(returning: Result(url: outputURL, duration: duration, microphoneURL: nil))
+                return
+            }
+            microphoneWriter.finishWriting {
+                let saved = microphoneWriter.status == .completed ? microphoneURL : nil
+                continuation.resume(returning: Result(url: outputURL, duration: duration, microphoneURL: saved))
+            }
         }
     }
 
@@ -293,6 +324,11 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         writer = nil
         videoInput = nil
         audioInput = nil
+        microphoneWriter = nil
+        microphoneInput = nil
+        microphoneSessionStart = nil
+        wantsMicrophone = false
+        microphoneURL = nil
         outputURL = nil
         wantsVideo = true
         sessionStart = nil
@@ -317,6 +353,50 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         if input.append(sampleBuffer) {
             lastSampleTime = time
         } else {
+            recordFailure(writer.error)
+        }
+    }
+
+    /// 麦克风单独写一个 m4a。
+    ///
+    /// writer 是延迟创建的：采样率、声道数以设备实际吐出来的格式为准。
+    /// 写死 48k 立体声在单声道麦克风上会直接写不进去（AirPods 的 HFP 就是单声道）。
+    private func appendMicrophone(_ sampleBuffer: CMSampleBuffer) {
+        guard wantsMicrophone, let url = microphoneURL else { return }
+
+        if microphoneWriter == nil {
+            guard let format = CMSampleBufferGetFormatDescription(sampleBuffer),
+                  let description = CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee
+            else { return }
+
+            let settings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVNumberOfChannelsKey: max(1, Int(description.mChannelsPerFrame)),
+                AVSampleRateKey: description.mSampleRate,
+                AVEncoderBitRateKey: 128_000
+            ]
+            guard let writer = try? AVAssetWriter(outputURL: url, fileType: .m4a) else { return }
+            let input = AVAssetWriterInput(mediaType: .audio, outputSettings: settings)
+            input.expectsMediaDataInRealTime = true
+            guard writer.canAdd(input) else { return }
+            writer.add(input)
+            guard writer.startWriting() else { return }
+            microphoneWriter = writer
+            microphoneInput = input
+        }
+
+        guard let writer = microphoneWriter,
+              let input = microphoneInput,
+              writer.status == .writing
+        else { return }
+
+        let time = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        if microphoneSessionStart == nil {
+            writer.startSession(atSourceTime: time)
+            microphoneSessionStart = time
+        }
+        guard input.isReadyForMoreMediaData else { return }
+        if !input.append(sampleBuffer) {
             recordFailure(writer.error)
         }
     }
@@ -510,6 +590,10 @@ extension ClipRecorder: SCStreamOutput {
         of type: SCStreamOutputType
     ) {
         guard sampleBuffer.isValid else { return }
+        if #available(macOS 15.0, *), type == .microphone {
+            appendMicrophone(sampleBuffer)
+            return
+        }
         switch type {
         case .screen:
             // 只录音频时没有视频轨，这里会自然丢弃。
