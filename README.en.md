@@ -17,7 +17,7 @@
 A menu bar app for macOS. While watching a video or listening to music,
 press a shortcut and it records the current window — picture and system audio —
 into an **mp4** file, saved straight to a folder. No screen recorder window,
-no setup dialog.
+no setup dialog. An optional microphone track can be recorded alongside.
 
 It has exactly three actions:
 
@@ -36,6 +36,10 @@ Shortcuts are configurable in Settings and take effect immediately.
   half-covered, the result is complete.
 - **Picture and system audio in one file**: both are captured by default,
   or you can record audio only.
+- **Optional microphone**: saved as a separate `<name>_mic.m4a` track so you can
+  adjust or transcribe the voice on its own.
+- **Selectable input device**: follow the system default, or pick a specific
+  microphone in Settings.
 - **Flat output**: one recording is one file, ready to drag into your editor.
 - **No third-party dependencies**: only system frameworks
   (ScreenCaptureKit, AVFoundation, AppKit, SwiftUI).
@@ -243,10 +247,11 @@ Press `⌥⌘5` and a toolbar appears at the bottom of the screen:
 - **Region**: drag to select an area; after releasing you can still resize with
   the handles or move it by dragging inside
 
-Two toggles control what is recorded:
+Three toggles control what is recorded: picture, system audio and microphone.
 
 - Picture on → outputs `.mp4`
-- Audio only → outputs `.m4a`
+- System audio only → outputs `.m4a`
+- The microphone is additive: it cannot start a recording on its own
 
 Press Return or click **Start Recording**. Press `Esc` to cancel.
 
@@ -254,6 +259,24 @@ Press Return or click **Start Recording**. Press `Esc` to cancel.
 
 Press `⌥⌘M` to take a screenshot and open a small note window. Notes save
 automatically.
+
+### Microphone
+
+The first time you enable the microphone, macOS asks for permission.
+
+The microphone is written to its own track, `<name>_mic.m4a`, so you can balance
+it against the original audio or transcribe it separately.
+
+Choose the input device in **Settings → Recording defaults → Microphone input**.
+The default is "Follow system".
+
+If you select a Bluetooth device such as AirPods, macOS switches the headset to
+hands-free mode and **system audio quality drops with it**. That is a Bluetooth
+limitation, not something the app can work around.
+
+Recommended setup: use headphones only for listening and the built-in
+microphone for your voice — system audio stays high quality, and there is no
+echo because the headphones are in your ears.
 
 ### While recording
 
@@ -287,6 +310,7 @@ Default location: `~/Desktop/MomentFlow/`
 ~/Desktop/MomentFlow/
   index.jsonl                              metadata, one record per line
   2026-10-24_104136_Window.mp4             picture + system audio
+  2026-10-24_104136_Window_mic.m4a         microphone (when enabled)
   2026-10-24_105218_Title.png              screenshot from "Mark a moment"
 ```
 
@@ -301,7 +325,8 @@ Menu bar icon → **Settings**:
 
 - Shortcuts (click the field, then press the combination you want)
 - Library location
-- Default capture options (picture / system audio)
+- Default capture options (picture / system audio / microphone)
+- Microphone input device
 - Screen Recording permission status
 
 ## Limitations
@@ -312,7 +337,10 @@ Menu bar icon → **Settings**:
 - **No prebuilt binary.** The installer compiles locally. Shipping a
   "download and run" binary requires an Apple Developer certificate and
   notarization.
-- **No microphone capture.** Only system audio is recorded.
+- **Bluetooth microphones lower system-audio quality.** Using AirPods or a
+  similar headset as the microphone switches it to hands-free mode, so the
+  recorded system audio becomes mono and narrowband. Use the built-in
+  microphone to keep it high quality.
 
 ## FAQ
 
