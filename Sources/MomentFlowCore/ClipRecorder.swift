@@ -92,6 +92,8 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
     private var microphoneSessionStart: CMTime?
     private var wantsMicrophone = false
     private var microphoneURL: URL?
+    /// 麦克风轨写失败过。主轨照常完成，只在结尾丢掉麦克风。
+    private var microphoneFailed = false
     private var outputURL: URL?
     private var wantsVideo = true
     private var sessionStart: CMTime?
@@ -288,6 +290,7 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         let duration = durationLocked()
         let microphoneWriter = self.microphoneWriter
         let microphoneURL = self.microphoneURL
+        let microphoneFailed = self.microphoneFailed
 
         videoInput?.markAsFinished()
         audioInput?.markAsFinished()
@@ -302,6 +305,12 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
                 return
             }
             guard let microphoneWriter, let microphoneURL else {
+                continuation.resume(returning: Result(url: outputURL, duration: duration, microphoneURL: nil))
+                return
+            }
+            if microphoneFailed {
+                // 写过的半截文件没有用，删掉；主录制照常交付。
+                try? FileManager.default.removeItem(at: microphoneURL)
                 continuation.resume(returning: Result(url: outputURL, duration: duration, microphoneURL: nil))
                 return
             }
@@ -329,6 +338,7 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         microphoneSessionStart = nil
         wantsMicrophone = false
         microphoneURL = nil
+        microphoneFailed = false
         outputURL = nil
         wantsVideo = true
         sessionStart = nil
@@ -367,7 +377,23 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         if microphoneWriter == nil {
             guard let format = CMSampleBufferGetFormatDescription(sampleBuffer),
                   let description = CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee
-            else { return }
+            else {
+                Self.logger.error("microphone: sample buffer has no audio format description")
+                microphoneFailed = true
+                return
+            }
+
+            let isInterleaved = description.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0
+            Self.logger.info("""
+                microphone format: \
+                id=\(description.mFormatID, privacy: .public) \
+                rate=\(description.mSampleRate, privacy: .public) \
+                channels=\(description.mChannelsPerFrame, privacy: .public) \
+                bits=\(description.mBitsPerChannel, privacy: .public) \
+                bytesPerFrame=\(description.mBytesPerFrame, privacy: .public) \
+                interleaved=\(isInterleaved, privacy: .public) \
+                frames=\(CMSampleBufferGetNumSamples(sampleBuffer), privacy: .public)
+                """)
 
             let settings: [String: Any] = [
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
@@ -378,9 +404,20 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
             guard let writer = try? AVAssetWriter(outputURL: url, fileType: .m4a) else { return }
             let input = AVAssetWriterInput(mediaType: .audio, outputSettings: settings)
             input.expectsMediaDataInRealTime = true
-            guard writer.canAdd(input) else { return }
+            guard writer.canAdd(input) else {
+                Self.logger.error("microphone: writer can't accept an audio input")
+                microphoneFailed = true
+                return
+            }
             writer.add(input)
-            guard writer.startWriting() else { return }
+            guard writer.startWriting() else {
+                Self.logger.error("""
+                    microphone: startWriting failed: \
+                    \(writer.error?.localizedDescription ?? "unknown", privacy: .public)
+                    """)
+                microphoneFailed = true
+                return
+            }
             microphoneWriter = writer
             microphoneInput = input
         }
@@ -397,7 +434,14 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
         }
         guard input.isReadyForMoreMediaData else { return }
         if !input.append(sampleBuffer) {
-            recordFailure(writer.error)
+            // 麦克风是附加轨：写失败不能连累画面和系统声音。
+            microphoneFailed = true
+            Self.logger.error("""
+                microphone append failed: \
+                \(writer.error?.localizedDescription ?? "unknown", privacy: .public)
+                """)
+            input.markAsFinished()
+            writer.cancelWriting()
         }
     }
 
