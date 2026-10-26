@@ -398,8 +398,10 @@ public final class ClipRecorder: NSObject, @unchecked Sendable {
             let settings: [String: Any] = [
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
                 AVNumberOfChannelsKey: max(1, Int(description.mChannelsPerFrame)),
-                AVSampleRateKey: description.mSampleRate,
-                AVEncoderBitRateKey: 128_000
+                AVSampleRateKey: description.mSampleRate
+                // 不指定位率。24 kHz 单声道（蓝牙通话麦就是这种）允许的
+                // AAC 位率远低于 128 kbps，写死会让编码器报「无法编码媒体」。
+                // 交给编码器按采样率和声道数自己选。
             ]
             guard let writer = try? AVAssetWriter(outputURL: url, fileType: .m4a) else { return }
             let input = AVAssetWriterInput(mediaType: .audio, outputSettings: settings)
