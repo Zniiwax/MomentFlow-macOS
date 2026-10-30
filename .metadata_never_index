@@ -1,0 +1,4 @@
+Spotlight / Launchpad ignore this folder.
+
+The build output in Dist/ is a copy of ~/Applications/MomentFlow.app.
+Without this file macOS indexes both copies and the app shows up twice.

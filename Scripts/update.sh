@@ -43,6 +43,7 @@ if [ -d "$TARGET" ]; then
 fi
 cp -R "Dist/$APP_NAME.app" "$DEST/"
 rm -rf "$BACKUP"
+rm -rf "Dist/$APP_NAME.app"
 echo "   $TARGET"
 
 bold "==> 4/4 启动"
